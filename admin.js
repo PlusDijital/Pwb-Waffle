@@ -1,4 +1,5 @@
-const STORAGE_KEY = "pwb-site-content";
+const CONTENT_ENDPOINT = "/api/content";
+const PASSWORD_KEY = "pwb-admin-password";
 
 const productDefaults = [
   ["Kızıl Tutku", "Kırmızı meyveler, çikolata sos, beyaz sos ve çıtır fıstık parçacıkları.", "Meyveli yoğun", "assets/waffle-kirmizi.jpeg", "meyveli", "Kırmızı meyveler, çikolata sos, beyaz sos, çıtır fıstık"],
@@ -46,7 +47,13 @@ const productsEditor = document.querySelector("#products-editor");
 const status = document.querySelector("#save-status");
 const resetButton = document.querySelector("#reset-button");
 const addButton = document.querySelector("#add-product");
+const passwordInput = document.querySelector("#admin-password");
 let products = [];
+
+passwordInput.value = sessionStorage.getItem(PASSWORD_KEY) || "";
+passwordInput.addEventListener("input", () => {
+  sessionStorage.setItem(PASSWORD_KEY, passwordInput.value);
+});
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -73,9 +80,10 @@ function normalizeProduct(product) {
   };
 }
 
-function getSavedData() {
+async function getSavedData() {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const response = await fetch(CONTENT_ENDPOINT);
+    const saved = response.ok ? await response.json() : null;
     if (!saved) return clone(defaultData);
     return {
       ...clone(defaultData),
@@ -260,23 +268,47 @@ productsEditor.addEventListener("change", async (event) => {
   }
 });
 
-form.addEventListener("submit", (event) => {
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData()));
-    status.textContent = "Değişiklikler kaydedildi.";
-  } catch {
-    status.textContent = "Kayıt alanı doldu. Daha küçük görseller deneyin.";
+
+  const password = passwordInput.value.trim();
+  if (!password) {
+    status.textContent = "Kaydetmek için yönetici parolasını girin.";
+    return;
   }
+
+  status.textContent = "Kaydediliyor...";
+
+  try {
+    const response = await fetch(CONTENT_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-password": password,
+      },
+      body: JSON.stringify(collectData()),
+    });
+
+    if (response.status === 401) {
+      status.textContent = "Parola yanlış. Lütfen tekrar deneyin.";
+    } else if (!response.ok) {
+      status.textContent = "Kaydedilemedi. Lütfen tekrar deneyin.";
+    } else {
+      sessionStorage.setItem(PASSWORD_KEY, password);
+      status.textContent = "Değişiklikler kaydedildi ve canlıya yansıdı.";
+    }
+  } catch {
+    status.textContent = "Bağlantı hatası. Lütfen tekrar deneyin.";
+  }
+
   window.setTimeout(() => {
     status.textContent = "";
-  }, 3000);
+  }, 4000);
 });
 
 resetButton.addEventListener("click", () => {
-  localStorage.removeItem(STORAGE_KEY);
   populateForm(clone(defaultData));
-  status.textContent = "Varsayılan içerik geri yüklendi.";
+  status.textContent = "Form varsayılan içerikle dolduruldu. Kaydetmeyi unutmayın.";
 });
 
-populateForm(getSavedData());
+getSavedData().then(populateForm);

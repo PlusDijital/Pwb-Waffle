@@ -1,4 +1,4 @@
-const STORAGE_KEY = "pwb-site-content";
+const CONTENT_ENDPOINT = "/api/content";
 
 function escapeContent(value = "") {
   return String(value)
@@ -8,11 +8,12 @@ function escapeContent(value = "") {
     .replaceAll('"', "&quot;");
 }
 
-function applySavedContent() {
+async function applySavedContent() {
   let data;
 
   try {
-    data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const response = await fetch(CONTENT_ENDPOINT);
+    data = response.ok ? await response.json() : null;
   } catch {
     data = null;
   }
@@ -42,6 +43,8 @@ function applySavedContent() {
   document.querySelector("#venue-location").textContent = data.location || "Çark Caddesi";
   document.querySelector("#contact-title").textContent =
     `${data.city || "Adapazarı"} ${data.location || "Çark Caddesi"}`;
+
+  let heroNames;
 
   if (Array.isArray(data.products)) {
     const fallbackImages = [
@@ -81,140 +84,144 @@ function applySavedContent() {
       })
       .join("");
 
-    globalThis.pwbHeroNames = visibleProducts.slice(0, 4).map((product) => product.name);
+    heroNames = visibleProducts.slice(0, 4).map((product) => product.name);
   }
+
+  return heroNames;
 }
 
-applySavedContent();
+async function init() {
+  const heroNames = await applySavedContent();
 
-const heroSlides = document.querySelectorAll(".hero-slide");
-const heroDots = document.querySelectorAll(".hero-dots span");
-const heroFeatureName = document.querySelector("#hero-feature-name");
-const heroFeatureNames =
-  globalThis.pwbHeroNames?.length === 4
-    ? globalThis.pwbHeroNames
-    : ["Serotonin", "Klasik", "Karabela", "Special"];
-const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-let activeHeroSlide = 0;
+  const heroSlides = document.querySelectorAll(".hero-slide");
+  const heroDots = document.querySelectorAll(".hero-dots span");
+  const heroFeatureName = document.querySelector("#hero-feature-name");
+  const heroFeatureNames =
+    heroNames?.length === 4 ? heroNames : ["Serotonin", "Klasik", "Karabela", "Special"];
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let activeHeroSlide = 0;
 
-function showHeroSlide(index) {
-  heroSlides[activeHeroSlide].classList.remove("is-active");
-  heroDots[activeHeroSlide].classList.remove("is-active");
-  activeHeroSlide = index;
-  heroSlides[activeHeroSlide].classList.add("is-active");
-  heroDots[activeHeroSlide].classList.add("is-active");
-  if (heroFeatureName) {
-    heroFeatureName.textContent = heroFeatureNames[activeHeroSlide];
+  function showHeroSlide(index) {
+    heroSlides[activeHeroSlide].classList.remove("is-active");
+    heroDots[activeHeroSlide].classList.remove("is-active");
+    activeHeroSlide = index;
+    heroSlides[activeHeroSlide].classList.add("is-active");
+    heroDots[activeHeroSlide].classList.add("is-active");
+    if (heroFeatureName) {
+      heroFeatureName.textContent = heroFeatureNames[activeHeroSlide];
+    }
   }
-}
 
-if (!reduceMotion && heroSlides.length > 1) {
-  window.setInterval(() => {
-    showHeroSlide((activeHeroSlide + 1) % heroSlides.length);
-  }, 4200);
-}
+  if (!reduceMotion && heroSlides.length > 1) {
+    window.setInterval(() => {
+      showHeroSlide((activeHeroSlide + 1) % heroSlides.length);
+    }, 4200);
+  }
 
-const revealItems = document.querySelectorAll(
-  ".quick-info > div, .intro > *, .venue-gallery, .venue-copy, .section-heading, .menu-card, .special-copy, .special-band > img, .order-section > *, .contact-section > *, .footer-main, .footer-grid, .footer-links",
-);
-
-revealItems.forEach((item, index) => {
-  item.classList.add("reveal");
-  item.style.transitionDelay = `${Math.min(index % 6, 5) * 70}ms`;
-});
-
-if (reduceMotion) {
-  revealItems.forEach((item) => item.classList.add("is-visible"));
-} else {
-  const revealObserver = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("is-visible");
-          revealObserver.unobserve(entry.target);
-        }
-      });
-    },
-    {
-      rootMargin: "0px 0px -12% 0px",
-      threshold: 0.12,
-    },
+  const revealItems = document.querySelectorAll(
+    ".quick-info > div, .intro > *, .venue-gallery, .venue-copy, .section-heading, .menu-card, .special-copy, .special-band > img, .order-section > *, .contact-section > *, .footer-main, .footer-grid, .footer-links",
   );
 
-  revealItems.forEach((item) => revealObserver.observe(item));
-}
+  revealItems.forEach((item, index) => {
+    item.classList.add("reveal");
+    item.style.transitionDelay = `${Math.min(index % 6, 5) * 70}ms`;
+  });
 
-const filterButtons = document.querySelectorAll(".menu-filters button");
-const menuCards = document.querySelectorAll(".menu-card");
+  if (reduceMotion) {
+    revealItems.forEach((item) => item.classList.add("is-visible"));
+  } else {
+    const revealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        rootMargin: "0px 0px -12% 0px",
+        threshold: 0.12,
+      },
+    );
 
-filterButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    const filter = button.dataset.filter;
+    revealItems.forEach((item) => revealObserver.observe(item));
+  }
 
-    filterButtons.forEach((item) => item.classList.remove("is-active"));
-    button.classList.add("is-active");
+  const filterButtons = document.querySelectorAll(".menu-filters button");
+  const menuCards = document.querySelectorAll(".menu-card");
 
-    menuCards.forEach((card) => {
-      const categories = card.dataset.category || "";
-      const shouldShow = filter === "all" || categories.includes(filter);
-      card.classList.toggle("is-hidden", !shouldShow);
+  filterButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const filter = button.dataset.filter;
+
+      filterButtons.forEach((item) => item.classList.remove("is-active"));
+      button.classList.add("is-active");
+
+      menuCards.forEach((card) => {
+        const categories = card.dataset.category || "";
+        const shouldShow = filter === "all" || categories.includes(filter);
+        card.classList.toggle("is-hidden", !shouldShow);
+      });
     });
   });
-});
 
-const modal = document.querySelector("#product-modal");
-const modalImage = document.querySelector("#modal-image");
-const modalTitle = document.querySelector("#modal-title");
-const modalTag = document.querySelector("#modal-tag");
-const modalDescription = document.querySelector("#modal-description");
-const modalIngredients = document.querySelector("#modal-ingredients");
+  const modal = document.querySelector("#product-modal");
+  const modalImage = document.querySelector("#modal-image");
+  const modalTitle = document.querySelector("#modal-title");
+  const modalTag = document.querySelector("#modal-tag");
+  const modalDescription = document.querySelector("#modal-description");
+  const modalIngredients = document.querySelector("#modal-ingredients");
 
-function openProductModal(card) {
-  const image = card.querySelector("img");
-  const title = card.querySelector("h3");
-  const description = card.querySelector("p");
-  const tag = card.querySelector("strong");
+  function openProductModal(card) {
+    const image = card.querySelector("img");
+    const title = card.querySelector("h3");
+    const description = card.querySelector("p");
+    const tag = card.querySelector("strong");
 
-  modalImage.src = image.src;
-  modalImage.alt = image.alt;
-  modalTitle.textContent = title.textContent;
-  modalDescription.textContent = description.textContent;
-  modalTag.textContent = tag.textContent;
-  modalIngredients.textContent = card.dataset.ingredients;
+    modalImage.src = image.src;
+    modalImage.alt = image.alt;
+    modalTitle.textContent = title.textContent;
+    modalDescription.textContent = description.textContent;
+    modalTag.textContent = tag.textContent;
+    modalIngredients.textContent = card.dataset.ingredients;
 
-  modal.classList.add("is-open");
-  modal.setAttribute("aria-hidden", "false");
-  document.body.classList.add("modal-open");
-}
-
-function closeProductModal() {
-  modal.classList.remove("is-open");
-  modal.setAttribute("aria-hidden", "true");
-  document.body.classList.remove("modal-open");
-}
-
-menuCards.forEach((card) => {
-  card.querySelector(".card-action").addEventListener("click", () => openProductModal(card));
-});
-
-document.querySelectorAll("[data-close-modal]").forEach((item) => {
-  item.addEventListener("click", closeProductModal);
-});
-
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && modal.classList.contains("is-open")) {
-    closeProductModal();
+    modal.classList.add("is-open");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
   }
-});
 
-const openStatusEl = document.querySelector("#open-status");
-if (openStatusEl) {
-  const nowTR = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Istanbul" }));
-  const minutes = nowTR.getHours() * 60 + nowTR.getMinutes();
-  const isOpen = minutes >= 720 && minutes < 1380;
-  openStatusEl.textContent = isOpen ? "Açık" : "Kapalı";
-  openStatusEl.style.color = isOpen ? "#4ade80" : "#f87171";
+  function closeProductModal() {
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
+  }
+
+  menuCards.forEach((card) => {
+    card.querySelector(".card-action").addEventListener("click", () => openProductModal(card));
+  });
+
+  document.querySelectorAll("[data-close-modal]").forEach((item) => {
+    item.addEventListener("click", closeProductModal);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && modal.classList.contains("is-open")) {
+      closeProductModal();
+    }
+  });
+
+  const openStatusEl = document.querySelector("#open-status");
+  if (openStatusEl) {
+    const nowTR = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Istanbul" }));
+    const minutes = nowTR.getHours() * 60 + nowTR.getMinutes();
+    const isOpen = minutes >= 720 && minutes < 1380;
+    openStatusEl.textContent = isOpen ? "Açık" : "Kapalı";
+    openStatusEl.style.color = isOpen ? "#4ade80" : "#f87171";
+  }
+
+  const footerYear = document.querySelector("#footer-year");
+  if (footerYear) footerYear.textContent = new Date().getFullYear();
 }
 
-const footerYear = document.querySelector("#footer-year");
-if (footerYear) footerYear.textContent = new Date().getFullYear();
+init();
