@@ -124,6 +124,19 @@ img {
   transform: translateY(-2px);
 }
 
+.button.yemeksepeti-button {
+  border-color: #ea004b;
+  color: #fff;
+  background: #ea004b;
+  box-shadow: 0 14px 34px rgba(234, 0, 75, 0.28);
+}
+
+.button.yemeksepeti-button:hover {
+  border-color: #ff2b70;
+  background: #ff2b70;
+  box-shadow: 0 18px 42px rgba(234, 0, 75, 0.42);
+}
+
 .hero {
   position: relative;
   min-height: 94svh;
@@ -334,7 +347,7 @@ h3 {
 }
 
 .quick-info div:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255,255, 0.04);
   transform: translateY(-2px);
 }
 
