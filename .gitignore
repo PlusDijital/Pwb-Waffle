@@ -1,3 +1,4 @@
 .tools/
 .netlify/
 .DS_Store
+.vercel
