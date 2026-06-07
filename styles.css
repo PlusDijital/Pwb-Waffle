@@ -609,8 +609,15 @@ h3 {
 
 .order-actions {
   flex-wrap: wrap;
+  justify-content: center;
   gap: 14px;
   align-self: center;
+  width: 100%;
+}
+
+.order-actions .platform {
+  min-width: 240px;
+  padding: 0 36px;
 }
 
 .platform {
