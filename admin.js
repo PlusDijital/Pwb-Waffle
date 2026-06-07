@@ -1,5 +1,7 @@
 const CONTENT_ENDPOINT = "/api/content";
 const PASSWORD_KEY = "pwb-admin-password";
+const USERNAME_KEY = "pwb-admin-username";
+const ADMIN_USERNAME = "admin";
 
 const productDefaults = [
   ["Kızıl Tutku", "Kırmızı meyveler, çikolata sos, beyaz sos ve çıtır fıstık parçacıkları.", "Meyveli yoğun", "assets/waffle-kirmizi.jpeg", "meyveli", "Kırmızı meyveler, çikolata sos, beyaz sos, çıtır fıstık"],
@@ -48,12 +50,75 @@ const status = document.querySelector("#save-status");
 const resetButton = document.querySelector("#reset-button");
 const addButton = document.querySelector("#add-product");
 const passwordInput = document.querySelector("#admin-password");
+const usernameInput = document.querySelector("#admin-username");
 let products = [];
+
+usernameInput.value = sessionStorage.getItem(USERNAME_KEY) || "";
+usernameInput.addEventListener("input", () => {
+  sessionStorage.setItem(USERNAME_KEY, usernameInput.value);
+});
 
 passwordInput.value = sessionStorage.getItem(PASSWORD_KEY) || "";
 passwordInput.addEventListener("input", () => {
   sessionStorage.setItem(PASSWORD_KEY, passwordInput.value);
 });
+
+const loginScreen = document.querySelector("#login-screen");
+const loginForm = document.querySelector("#login-form");
+const loginUsernameInput = document.querySelector("#login-username");
+const loginPasswordInput = document.querySelector("#login-password");
+const loginStatus = document.querySelector("#login-status");
+const adminApp = document.querySelector("#admin-app");
+
+async function checkLogin(username, password) {
+  if (username !== ADMIN_USERNAME || !password) return false;
+
+  try {
+    const response = await fetch("/api/admin-login", {
+      method: "POST",
+      headers: { "x-admin-password": password },
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+function enterAdminApp(username, password) {
+  sessionStorage.setItem(USERNAME_KEY, username);
+  sessionStorage.setItem(PASSWORD_KEY, password);
+  usernameInput.value = username;
+  passwordInput.value = password;
+  loginScreen.hidden = true;
+  adminApp.hidden = false;
+  getSavedData().then(populateForm);
+}
+
+loginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const username = loginUsernameInput.value.trim();
+  const password = loginPasswordInput.value.trim();
+
+  loginStatus.textContent = "Giriş yapılıyor...";
+
+  const ok = await checkLogin(username, password);
+  if (ok) {
+    loginStatus.textContent = "";
+    enterAdminApp(username, password);
+  } else {
+    loginStatus.textContent = "Kullanıcı adı veya parola yanlış.";
+  }
+});
+
+(async () => {
+  const savedUsername = sessionStorage.getItem(USERNAME_KEY) || "";
+  const savedPassword = sessionStorage.getItem(PASSWORD_KEY) || "";
+
+  if (savedUsername && savedPassword && (await checkLogin(savedUsername, savedPassword))) {
+    enterAdminApp(savedUsername, savedPassword);
+  }
+})();
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -271,9 +336,16 @@ productsEditor.addEventListener("change", async (event) => {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
+  const username = usernameInput.value.trim();
   const password = passwordInput.value.trim();
-  if (!password) {
-    status.textContent = "Kaydetmek için yönetici parolasını girin.";
+
+  if (!username || !password) {
+    status.textContent = "Kaydetmek için kullanıcı adı ve parola girin.";
+    return;
+  }
+
+  if (username !== ADMIN_USERNAME) {
+    status.textContent = "Kullanıcı adı yanlış. Lütfen tekrar deneyin.";
     return;
   }
 
@@ -294,6 +366,7 @@ form.addEventListener("submit", async (event) => {
     } else if (!response.ok) {
       status.textContent = "Kaydedilemedi. Lütfen tekrar deneyin.";
     } else {
+      sessionStorage.setItem(USERNAME_KEY, username);
       sessionStorage.setItem(PASSWORD_KEY, password);
       status.textContent = "Değişiklikler kaydedildi ve canlıya yansıdı.";
     }
@@ -310,5 +383,3 @@ resetButton.addEventListener("click", () => {
   populateForm(clone(defaultData));
   status.textContent = "Form varsayılan içerikle dolduruldu. Kaydetmeyi unutmayın.";
 });
-
-getSavedData().then(populateForm);

@@ -7,15 +7,32 @@
     <link rel="stylesheet" href="admin.css" />
   </head>
   <body>
-    <header class="admin-header">
-      <div>
-        <p>PWB Peanut Waffle</p>
-        <h1>Yönetim Paneli</h1>
-      </div>
-      <a href="index.html">Siteyi Görüntüle</a>
-    </header>
+    <section id="login-screen" class="login-screen">
+      <form id="login-form" class="login-form">
+        <h1>Yönetim Paneli Girişi</h1>
+        <label>
+          Kullanıcı adı
+          <input id="login-username" type="text" autocomplete="username" required />
+        </label>
+        <label>
+          Parola
+          <input id="login-password" type="password" autocomplete="current-password" required />
+        </label>
+        <span id="login-status" role="status"></span>
+        <button class="primary" type="submit">Giriş Yap</button>
+      </form>
+    </section>
 
-    <main>
+    <div id="admin-app" hidden>
+      <header class="admin-header">
+        <div>
+          <p>PWB Peanut Waffle</p>
+          <h1>Yönetim Paneli</h1>
+        </div>
+        <a href="index.html">Siteyi Görüntüle</a>
+      </header>
+
+      <main>
       <form id="admin-form">
         <section class="panel">
           <div class="panel-heading">
@@ -96,6 +113,10 @@
         <div class="admin-actions">
           <button class="secondary" id="reset-button" type="button">Varsayılana Dön</button>
           <label class="admin-password">
+            Kullanıcı adı
+            <input id="admin-username" type="text" autocomplete="username" />
+          </label>
+          <label class="admin-password">
             Yönetici parolası
             <input id="admin-password" type="password" autocomplete="current-password" />
           </label>
@@ -103,7 +124,8 @@
           <button class="primary" type="submit">Değişiklikleri Kaydet</button>
         </div>
       </form>
-    </main>
+      </main>
+    </div>
 
     <script src="admin.js"></script>
   </body>
