@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://pwb-peanut-waffle-adapazari.netlify.app/sitemap.xml
