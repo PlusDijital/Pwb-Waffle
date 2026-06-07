@@ -347,7 +347,7 @@ h3 {
 }
 
 .quick-info div:hover {
-  background: rgba(255, 255,255, 0.04);
+  background: rgba(255, 255, 255, 0.04);
   transform: translateY(-2px);
 }
 
@@ -778,7 +778,7 @@ h3 {
   left: 12px;
   z-index: 20;
   display: none;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
   padding: 8px;
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -801,10 +801,6 @@ h3 {
 }
 
 .mobile-order-bar a:nth-child(2) {
-  background: var(--orange);
-}
-
-.mobile-order-bar a:nth-child(3) {
   background: var(--pink);
 }
 
