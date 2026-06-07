@@ -1018,6 +1018,10 @@ h3 {
     width: 100%;
   }
 
+  .hero-actions .yemeksepeti-button {
+    display: none;
+  }
+
   .mobile-order-bar {
     display: grid;
   }
