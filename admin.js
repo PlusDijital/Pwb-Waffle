@@ -61,16 +61,22 @@ const loginStatus = document.querySelector("#login-status");
 const adminApp = document.querySelector("#admin-app");
 
 async function checkLogin(username, password) {
-  if (username !== ADMIN_USERNAME || !password) return false;
+  if (username !== ADMIN_USERNAME || !password) return { ok: false };
+
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 12000);
 
   try {
     const response = await fetch("/api/admin-login", {
       method: "POST",
       headers: { "x-admin-password": password },
+      signal: controller.signal,
     });
-    return response.ok;
-  } catch {
-    return false;
+    return { ok: response.ok };
+  } catch (error) {
+    return { ok: false, timedOut: error?.name === "AbortError" };
+  } finally {
+    window.clearTimeout(timeout);
   }
 }
 
@@ -93,10 +99,12 @@ if (loginForm) {
 
     loginStatus.textContent = "Giriş yapılıyor...";
 
-    const ok = await checkLogin(username, password);
-    if (ok) {
+    const result = await checkLogin(username, password);
+    if (result.ok) {
       loginStatus.textContent = "";
       enterAdminApp(username, password);
+    } else if (result.timedOut) {
+      loginStatus.textContent = "Sunucudan yanıt alınamadı. Bağlantınızı kontrol edip tekrar deneyin.";
     } else {
       loginStatus.textContent = "Kullanıcı adı veya parola yanlış.";
     }
@@ -106,8 +114,9 @@ if (loginForm) {
     const savedUsername = sessionStorage.getItem(USERNAME_KEY) || "";
     const savedPassword = sessionStorage.getItem(PASSWORD_KEY) || "";
 
-    if (savedUsername && savedPassword && (await checkLogin(savedUsername, savedPassword))) {
-      enterAdminApp(savedUsername, savedPassword);
+    if (savedUsername && savedPassword) {
+      const result = await checkLogin(savedUsername, savedPassword);
+      if (result.ok) enterAdminApp(savedUsername, savedPassword);
     }
   })();
 }
