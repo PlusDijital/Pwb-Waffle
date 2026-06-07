@@ -53,16 +53,6 @@ const passwordInput = document.querySelector("#admin-password");
 const usernameInput = document.querySelector("#admin-username");
 let products = [];
 
-usernameInput.value = sessionStorage.getItem(USERNAME_KEY) || "";
-usernameInput.addEventListener("input", () => {
-  sessionStorage.setItem(USERNAME_KEY, usernameInput.value);
-});
-
-passwordInput.value = sessionStorage.getItem(PASSWORD_KEY) || "";
-passwordInput.addEventListener("input", () => {
-  sessionStorage.setItem(PASSWORD_KEY, passwordInput.value);
-});
-
 const loginScreen = document.querySelector("#login-screen");
 const loginForm = document.querySelector("#login-form");
 const loginUsernameInput = document.querySelector("#login-username");
@@ -87,38 +77,54 @@ async function checkLogin(username, password) {
 function enterAdminApp(username, password) {
   sessionStorage.setItem(USERNAME_KEY, username);
   sessionStorage.setItem(PASSWORD_KEY, password);
-  usernameInput.value = username;
-  passwordInput.value = password;
-  loginScreen.hidden = true;
-  adminApp.hidden = false;
+  if (usernameInput) usernameInput.value = username;
+  if (passwordInput) passwordInput.value = password;
+  if (loginScreen) loginScreen.hidden = true;
+  if (adminApp) adminApp.hidden = false;
   getSavedData().then(populateForm);
 }
 
-loginForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
+if (loginForm) {
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
 
-  const username = loginUsernameInput.value.trim();
-  const password = loginPasswordInput.value.trim();
+    const username = loginUsernameInput.value.trim();
+    const password = loginPasswordInput.value.trim();
 
-  loginStatus.textContent = "Giriş yapılıyor...";
+    loginStatus.textContent = "Giriş yapılıyor...";
 
-  const ok = await checkLogin(username, password);
-  if (ok) {
-    loginStatus.textContent = "";
-    enterAdminApp(username, password);
-  } else {
-    loginStatus.textContent = "Kullanıcı adı veya parola yanlış.";
-  }
-});
+    const ok = await checkLogin(username, password);
+    if (ok) {
+      loginStatus.textContent = "";
+      enterAdminApp(username, password);
+    } else {
+      loginStatus.textContent = "Kullanıcı adı veya parola yanlış.";
+    }
+  });
 
-(async () => {
-  const savedUsername = sessionStorage.getItem(USERNAME_KEY) || "";
-  const savedPassword = sessionStorage.getItem(PASSWORD_KEY) || "";
+  (async () => {
+    const savedUsername = sessionStorage.getItem(USERNAME_KEY) || "";
+    const savedPassword = sessionStorage.getItem(PASSWORD_KEY) || "";
 
-  if (savedUsername && savedPassword && (await checkLogin(savedUsername, savedPassword))) {
-    enterAdminApp(savedUsername, savedPassword);
-  }
-})();
+    if (savedUsername && savedPassword && (await checkLogin(savedUsername, savedPassword))) {
+      enterAdminApp(savedUsername, savedPassword);
+    }
+  })();
+}
+
+if (usernameInput) {
+  usernameInput.value = sessionStorage.getItem(USERNAME_KEY) || "";
+  usernameInput.addEventListener("input", () => {
+    sessionStorage.setItem(USERNAME_KEY, usernameInput.value);
+  });
+}
+
+if (passwordInput) {
+  passwordInput.value = sessionStorage.getItem(PASSWORD_KEY) || "";
+  passwordInput.addEventListener("input", () => {
+    sessionStorage.setItem(PASSWORD_KEY, passwordInput.value);
+  });
+}
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
